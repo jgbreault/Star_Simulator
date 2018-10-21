@@ -65,14 +65,14 @@ class Star:
             else:
                 dr = 5000 + r_v[i]/2000.0 # chosen arbitrarily
             
-            k_v = rk_array(rho_v[i], T_v[i], M_v[i], L_v[i], r_v[i], dr, self.lam, self.LAM)
+            rk_v = rk_array(rho_v[i], T_v[i], M_v[i], L_v[i], r_v[i], dr, self.lam, self.LAM)
 
             r_v.append(r_v[i]+dr)
-            rho_v.append(rho_v[i]+dr/6.0*(k_v[0,0] + 2.0*k_v[0,1] + 2.0*k_v[0,2]+ k_v[0,3]))
-            T_v.append(T_v[i]+dr/6.0*(k_v[1,0] + 2.0*k_v[1,1] + 2.0*k_v[1,2]+ k_v[1,3]))
-            M_v.append(M_v[i]+dr/6.0*(k_v[2,0] + 2.0*k_v[2,1] + 2.0*k_v[2,2]+ k_v[2,3]))
-            L_v.append(L_v[i]+dr/6.0*(k_v[3,0] + 2.0*k_v[3,1] + 2.0*k_v[3,2]+ k_v[3,3]))
-            tau_v.append(tau_v[i]+dr/6.0*(k_v[4,0] + 2.0*k_v[4,1] + 2.0*k_v[4,2]+ k_v[4,3]))
+            rho_v.append(rho_v[i]+dr/6.0*(rk_v[0,0] + 2.0*rk_v[0,1] + 2.0*rk_v[0,2]+ rk_v[0,3]))
+            T_v.append(T_v[i]+dr/6.0*(rk_v[1,0] + 2.0*rk_v[1,1] + 2.0*rk_v[1,2]+ rk_v[1,3]))
+            M_v.append(M_v[i]+dr/6.0*(rk_v[2,0] + 2.0*rk_v[2,1] + 2.0*rk_v[2,2]+ rk_v[2,3]))
+            L_v.append(L_v[i]+dr/6.0*(rk_v[3,0] + 2.0*rk_v[3,1] + 2.0*rk_v[3,2]+ rk_v[3,3]))
+            tau_v.append(tau_v[i]+dr/6.0*(rk_v[4,0] + 2.0*rk_v[4,1] + 2.0*rk_v[4,2]+ rk_v[4,3]))
 
             i += 1
             delta_tau = kappa(rho_v[i], T_v[i])*rho_v[i]**2.0/abs(drho_dr(rho_v[i], T_v[i], M_v[i], r_v[i], dT_dr(rho_v[i], T_v[i], M_v[i], L_v[i], r_v[i], kappa(rho_v[i], T_v[i]), self.lam, self.LAM), self.lam, self.LAM))
@@ -82,27 +82,47 @@ class Star:
 
         output = np.array([rho_v, T_v, M_v, L_v, tau_v, r_v])
 
+        ### set self.vectors
+
         return output
 
 class Main_Sequence:
-    pass
+    def __init__(self, T0_min, T0_max, num_stars): ## everything about a star can be determined by it's centre temperature alone
+        self.num_stars = num_stars
+        self.T0_min = T0_min
+        self.T0_max = T0_max
+        self.T0_v = np.linspace(self.T0_min, self.T0_max, self.num_stars)
+
+        self.Tsurf_v = []
+        self.Lsurf_v = []
+
+        for i in range(num_stars):
+            S = Star(self.T0_v[i])
+            S.get_rho0(300, 500000, 10)
+            int_result = S.rk_integration(S.rho0)
+            self.Tsurf_v.append((int_result[3,-1]/4.0/np.pi/sigma/int_result[5,-1]/int_result[5,-1])**0.25)
+            self.Lsurf_v.append(int_result[3,-1]/L_sun)
 
 
-S1 = Star(10.0**6.95, lam = -5000000000)
-S1.get_rho0(300, 500000, 13)
-A = S1.rk_integration(S1.rho0)
-
-radius = max(A[5,:])
-plt.plot(A[5,:]/radius, A[0,:]/max(A[0,:]), label = r'$\rho$' + '/' + r'$\rho_c$')#rho
-plt.plot(A[5,:]/radius, A[1,:]/max(A[1,:]), label = 'T/Tc')#T
-plt.plot(A[5,:]/radius, A[2,:]/max(A[2,:]), label = 'M/M*')#M
-plt.plot(A[5,:]/radius, A[3,:]/max(A[3,:]), label = 'L/L*')#L
-plt.title(r'$\rho$'+'TML vs. r/R*')
-plt.xlabel('r/R*')
-plt.ylabel(r'$\rho$' + '/' + r'$\rho_c$' + ', T/Tc, M/M*, L/L*')
-plt.legend(loc = 0)
-plt.savefig('pTML.png')
+MS = Main_Sequence(10.0**6.6, 10.0**7.4, 8)
+plt.plot(MS.Tsurf_v, MS.Lsurf_v)
+plt.xscale('log')
+plt.yscale('log')
 plt.show()
+
+# radius = max(A[5,:])
+# plt.plot(A[5,:]/radius, A[0,:]/max(A[0,:]), label = r'$\rho$' + '/' + r'$\rho_c$')#rho
+# plt.plot(A[5,:]/radius, A[1,:]/max(A[1,:]), label = 'T/Tc')#T
+# plt.plot(A[5,:]/radius, A[2,:]/max(A[2,:]), label = 'M/M*')#M
+# plt.plot(A[5,:]/radius, A[3,:]/max(A[3,:]), label = 'L/L*')#L
+# plt.title(r'$\rho$'+'TML vs. r/R*')
+# plt.xlabel('r/R*')
+# plt.ylabel(r'$\rho$' + '/' + r'$\rho_c$' + ', T/Tc, M/M*, L/L*')
+# plt.legend(loc = 0)
+# plt.savefig('pTML.png')
+# plt.show()
+
+# print min(A[1,:])
 
 ## Bisection Method ###########################
 
