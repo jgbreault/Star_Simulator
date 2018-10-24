@@ -111,7 +111,7 @@ class Star:
 class Main_Sequence:
     def __init__(self, T0_min, T0_max, num_stars, lam=None, LAM=None):
         """The main sequence is a continuous and distinctive band of stars 
-        that appears on plots of stellar color versus brightness.
+        that appears on plots of stellar surface tempurature versus luminosity.
         Here, stars are produced over a range of central tempuratures. 
         Main sequence stars have central tempuratures ranging from 10.0**6.6 Kelvin to 10.0**7.4 Kelvin"""
         self.T0_min = T0_min
