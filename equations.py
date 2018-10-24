@@ -37,19 +37,8 @@ def kappa(rho, T):
 		kappa = (1.0/kappa_H + 1.0/min(kappa_es, kappa_ff))**(-1.0)
 	return kappa
 
-def kappa_es():
-	kappa_es = 0.02*(1.0 + X)
-	return kappa_es
-
-def kappa_ff(rho, T):
-	kappa_ff = 10.0**24.0*(Z + 0.0001)*(rho/10.0**3.0)**0.7*T**(-3.5)
-	return kappa_ff
-
-def kappa_H(rho, T):
-	kappa_H = 2.5e-32*(Z/0.02)*(rho/10.0**3.0)**0.5*T**9.0
-	return kappa_H
-
 def drho_dr(rho, T, M, r, dT_dr, lam=None, LAM=None):
+	"""rho is density"""
 	assert not (lam is not None and LAM is not None)
 	mu = (2.0*X + 0.75*Y + 0.5*Z)**(-1.0)
 	dP_dT = rho*k/mu/m_proton + 4.0*a*T**3.0/3.0
@@ -64,10 +53,12 @@ def drho_dr(rho, T, M, r, dT_dr, lam=None, LAM=None):
 	return drho_dr
 
 def dP_dr(rho, M, r):
+	"""P is pressure"""
 	dP_dr = -G*M*rho/r**2.0
 	return dP_dr
 
 def dT_dr(rho, T, M, L, r, kappa, lam=None, LAM=None):
+	"""T is tempurature"""
 	assert not (lam is not None and LAM is not None)
 	mu = (2.0*X + 0.75*Y + 0.5*Z)**(-1.0)
 	P = (3.0*np.pi**2.0)**(2.0/3.0)*hbar**2.0*(rho/m_proton)**(5.0/3.0)/5.0/m_electron + rho*k*T/mu/m_proton + a*T**4.0/3.0
@@ -94,34 +85,28 @@ def P_phot(T):
 	return P_phot
 
 def P_tot(rho, T):
+	"""P_tot is the sum on degeneracy pressure, ideal gas pressure, and photon pressure"""
 	mu = (2.0*X + 0.75*Y + 0.5*Z)**(-1.0)
 	P_tot = (3.0*np.pi**2.0)**(2.0/3.0)*hbar**2.0*(rho/m_proton)**(5.0/3.0)/5.0/m_electron + rho*k*T/mu/m_proton + a*T**4.0/3.0
 	return P_tot
 
 def dM_dr(rho, r):
+	"""M is the mass within radius r of the centre of the star"""
 	dM_dr = 4.0*np.pi*r**2.0*rho
 	return dM_dr
 
 def dL_dr(rho, r, epsilon):
+	"""L is luminosity"""
 	dL_dr = 4.0*np.pi*r**2.0*rho*epsilon
 	return dL_dr
 
-def dL_dr_pp(rho, T, r):
-	epsilon_pp = 1.07e-7*(rho/10.0**5.0)*X**2.0*(T/10.0**6.0)**4.0
-	dL_dr_pp = 4.0*np.pi*r**2.0*rho*epsilon_pp
-	return dL_dr_pp
-
-def dL_dr_CNO(rho, T, r):
-	X_CNO = 0.03*X
-	epsilon_CNO = 8.24e-26*(rho/10.0**5.0)*X*X_CNO*(T/10.0**6.0)**19.9
-	dL_dr_CNO = 4.0*np.pi*r**2.0*rho*epsilon_CNO
-	return dL_dr_CNO
-
 def dtau_dr(rho, kappa):
+	"""tau is used to define the surface of the start"""
 	dtau_dr = kappa*rho
 	return dtau_dr
 
-def rk_array(rho, T, M, L, r, dr, lam=None, LAM=None): #dr is step size
+def rk_array(rho, T, M, L, r, dr, lam=None, LAM=None): #dr is step size in radius
+	"""Returns an array of values to be used in 4th order Runge-Kutta integration"""
 	k_array = np.empty((5, 4))
 
 	rho1 = drho_dr(rho, T, M, r, dT_dr(rho, T, M, L, r, kappa(rho, T), lam, LAM), lam, LAM)
@@ -155,20 +140,7 @@ def rk_array(rho, T, M, L, r, dr, lam=None, LAM=None): #dr is step size
 	return k_array
 
 def evaluate_trial(L_star, R_star, T_star):
+	"""This function is used to test how good the guess for rho0. Returns 0.0 when given perfectly correct inital conditions"""
 	SB_law = 4.0*np.pi*sigma*(R_star**2.0)*(T_star)**4.0
-	function = (L_star - SB_law)/((L_star*SB_law)**(0.5))
-   	return function
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	test_func = (L_star - SB_law)/((L_star*SB_law)**(0.5))
+   	return test_func
